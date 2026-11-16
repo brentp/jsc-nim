@@ -6,8 +6,8 @@
 ## result can be linked fully statically (``--passL:-static``).
 ##
 ## Options (``-d:...``):
-##   jscPrefix=<dir>          use an already-fetched tree (see fetch-jsc.sh layout).
-##                            also read from the ``JSC_PREFIX`` env var at compile time.
+##   jscPrefix=<dir>          use an already-fetched tree (see fetch-jsc.sh layout); it is never
+##                            downloaded into or modified. also read from the ``JSC_PREFIX`` env var.
 ##   jscLibc=musl             use the musl build of the prebuilt libraries.
 ##   jscWebkitVersion=<sha>   override the pinned oven-sh/WebKit autobuild.
 ##   jscMimallocCommit=<sha>  override the pinned oven-sh/mimalloc commit.
@@ -49,24 +49,47 @@ else:
       result = getEnv("HOME") / ".cache"
     result = result / "jsc-nim"
 
+  const jscManaged = jscPrefix.len == 0 and getEnv("JSC_PREFIX").len == 0
+    ## true when jsc-nim owns the directory (the default cache location).
+
   const jscDir* = block:
     var d = jscPrefix
     if d.len == 0: d = getEnv("JSC_PREFIX")
     if d.len == 0:
-      d = cacheRoot() / (jscWebkitVersion[0..11] & "-" & jscArch & "-" & jscLibc)
+      # every input that changes the downloaded tree is part of the key.
+      d = cacheRoot() / (jscWebkitVersion[0..11] & "-mi" & jscMimallocCommit[0..7] & "-" & jscArch & "-" & jscLibc)
     d
 
   const jscFetchScript = currentSourcePath().parentDir / "fetch-jsc.sh"
+  # must match what fetch-jsc.sh writes.
+  const jscExpectedVersion = "webkit=" & jscWebkitVersion & "\nmimalloc=" & jscMimallocCommit &
+                             "\narch=" & jscArch & "\nlibc=" & jscLibc & "\n"
 
   static:
-    if not fileExists(jscDir / "lib" / "libJavaScriptCore.a"):
+    let haveLib = fileExists(jscDir / "lib" / "libJavaScriptCore.a")
+    let versionFile = jscDir / "VERSION"
+    let versionOK = haveLib and fileExists(versionFile) and readFile(versionFile) == jscExpectedVersion
+    if not jscManaged:
+      # an explicit prefix is the user's directory: never download into (or replace) it.
+      if not haveLib:
+        raise newException(OSError, "[jsc-nim] " & jscDir / "lib" / "libJavaScriptCore.a" &
+          " not found. jscPrefix / JSC_PREFIX must point to a tree made by fetch-jsc.sh;" &
+          " unset it to let jsc-nim download into its own cache.")
+      if not versionOK:
+        echo "[jsc-nim] warning: ", versionFile, " does not match the requested versions:\n", jscExpectedVersion,
+             "using it anyway because it was given explicitly (jscPrefix / JSC_PREFIX)"
+    elif not versionOK:
+      if haveLib:
+        echo "[jsc-nim] ", jscDir, " does not match the requested versions; fetching again"
       let cmd = "bash " & quoteShell(jscFetchScript) & " " & quoteShell(jscDir) & " " &
                 jscWebkitVersion & " " & jscMimallocCommit & " " & jscArch & " " & jscLibc
-      echo "[jsc-nim] JavaScriptCore not found in ", jscDir, "; downloading (one-time, ~260MB)"
+      echo "[jsc-nim] downloading JavaScriptCore into ", jscDir, " (one-time, ~260MB)"
       let (output, code) = gorgeEx(cmd)
       if code != 0:
         echo output
         raise newException(OSError, "[jsc-nim] failed to fetch JavaScriptCore. command was:\n" & cmd)
+      if readFile(versionFile) != jscExpectedVersion:
+        raise newException(OSError, "[jsc-nim] fetched tree in " & jscDir & " has an unexpected VERSION file")
 
   const miFlags = "-O2 -DMI_STATIC_LIB -DMI_SKIP_COLLECT_ON_EXIT=1 -DMI_NO_PROCESS_DETACH=1" &
                   " -DMI_FREE_USE_PAGEMAP=1 -DMI_BUILD_RELEASE -DMI_DEFAULT_ALLOW_THP=0" &

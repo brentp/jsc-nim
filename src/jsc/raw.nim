@@ -192,6 +192,7 @@ proc JSObjectMakeTypedArrayWithArrayBufferAndOffset*(ctx: JSContextRef, arrayTyp
 proc JSObjectGetTypedArrayBytesPtr*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): pointer
 proc JSObjectGetTypedArrayLength*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): csize_t
 proc JSObjectGetTypedArrayByteLength*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): csize_t
+proc JSObjectGetTypedArrayByteOffset*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): csize_t
 proc JSObjectGetTypedArrayBuffer*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): JSObjectRef
 proc JSObjectMakeArrayBufferWithBytesNoCopy*(ctx: JSContextRef, bytes: pointer, byteLength: csize_t, bytesDeallocator: JSTypedArrayBytesDeallocator, deallocatorContext: pointer, exception: ptr JSValueRef): JSObjectRef
 proc JSObjectGetArrayBufferBytesPtr*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): pointer

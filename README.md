@@ -3,6 +3,8 @@
 Nim bindings for [JavaScriptCore](https://docs.webkit.org/Deep%20Dive/JSC/JavaScriptCore.html) (JSC), the JIT-compiling
 JavaScript engine from WebKit, with an easy, statically-linkable build on linux.
 
+These bindings are written entirely by Opus 5.5
+
 ```nim
 import jsc
 
@@ -57,8 +59,19 @@ On macOS the system `JavaScriptCore.framework` is used.
 + Bun's JSC uses mimalloc for the JS heap; jsc-nim compiles the matching mimalloc commit into your
   program (it does not replace `malloc`). It also provides the few symbols the Bun fork expects
   from its embedder (`src/jsc/bunstubs.c`).
-+ All contexts share one VM (context group). Contexts are not released: JSC's VM teardown asserts in
-  this build, so programs should create the contexts they need and simply exit.
++ The download cache is keyed on the WebKit version, mimalloc commit, architecture and libc, and its
+  `VERSION` file is checked on every compile.
+
+## Memory, contexts and threads
+
++ JSC's garbage collector sees `JSValueRef`s in local variables (it scans the C stack) but not ones
+  stored in Nim heap memory (a `seq`, a `ref object`, a global). `protect`/`unprotect` values kept there.
++ Native callbacks (`newFunction`) must not raise Nim exceptions. Report errors through the
+  `exception` out-parameter and use `toStringSafe` for conversions.
++ `newJSContext()` puts every context in one shared VM: contexts can exchange values, but only one
+  thread runs JavaScript in that VM at a time. `newJSContext(shared = false)` gives a context its own
+  VM so separate threads can run in parallel; never pass values between VMs.
++ `close` releases a context (and its private VM). `release` frees a `JSName`.
 
 ## Performance
 

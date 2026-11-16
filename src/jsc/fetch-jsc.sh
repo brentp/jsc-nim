@@ -37,6 +37,21 @@ download() { # url out
   fi
 }
 
+# never replace a directory that jsc-nim did not create: it must be missing,
+# empty, or carry the marker written below (or the VERSION file of older caches).
+is_ours() {
+  [[ ! -e "$1" ]] && return 0
+  [[ -d "$1" ]] || return 1
+  [[ -z "$(ls -A "$1")" ]] && return 0
+  [[ -f "$1/.jsc-nim-cache" ]] && return 0
+  [[ -f "$1/VERSION" && -f "$1/lib/libJavaScriptCore.a" ]] && head -1 "$1/VERSION" | grep -q '^webkit=' && return 0
+  return 1
+}
+if ! is_ours "$dest"; then
+  echo "[jsc-nim] refusing to replace $dest: it exists and was not created by jsc-nim" >&2
+  exit 1
+fi
+
 mkdir -p "$(dirname "$dest")"
 work=$(mktemp -d "${dest}.tmp.XXXXXX")
 trap 'rm -rf "$work"' EXIT
@@ -82,7 +97,12 @@ mkdir -p "$work/out/mimalloc"
 mv "$work/mi/src" "$work/mi/include" "$work/out/mimalloc/"
 
 printf 'webkit=%s\nmimalloc=%s\narch=%s\nlibc=%s\n' "$webkit_version" "$mimalloc_commit" "$arch" "$libc" > "$work/out/VERSION"
+echo "this directory is managed by jsc-nim and may be deleted and re-downloaded." > "$work/out/.jsc-nim-cache"
 
+if ! is_ours "$dest"; then
+  echo "[jsc-nim] refusing to replace $dest: it exists and was not created by jsc-nim" >&2
+  exit 1
+fi
 rm -rf "$dest"
 mv "$work/out" "$dest"
 echo "[jsc-nim] done: $dest" >&2
