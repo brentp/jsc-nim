@@ -101,6 +101,8 @@ else:
   {.compile(jscDir / "mimalloc" / "src" / "static.c", miFlags).}
   # symbols the Bun fork expects its embedder to provide.
   {.compile: "bunstubs.c".}
+  # the typed array functions with the API lock taken (see bunlock.cpp).
+  {.compile("bunlock.cpp", "-std=c++17 -O2 -fno-exceptions -I" & quoteShell(jscDir / "include")).}
 
   const jscLibs = block:
     var s = ""

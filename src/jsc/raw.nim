@@ -94,6 +94,13 @@ const
   kJSClassAttributeNone* = 0.JSClassAttributes
   kJSClassAttributeNoAutomaticPrototype* = (1 shl 1).JSClassAttributes
 
+# the typed array functions. With the prebuilt (Bun) library these bind to
+# wrappers that take the API lock, which the Bun fork omits (see bunlock.cpp).
+when jscBackend == "bun-prebuilt":
+  {.pragma: typedArrayApi, cdecl, importc: "jscnim_$1".}
+else:
+  {.pragma: typedArrayApi, cdecl, importc.}
+
 {.push cdecl, importc.}
 
 # JSBase.h
@@ -135,7 +142,6 @@ proc JSValueIsString*(ctx: JSContextRef, value: JSValueRef): bool
 proc JSValueIsObject*(ctx: JSContextRef, value: JSValueRef): bool
 proc JSValueIsObjectOfClass*(ctx: JSContextRef, value: JSValueRef, jsClass: JSClassRef): bool
 proc JSValueIsArray*(ctx: JSContextRef, value: JSValueRef): bool
-proc JSValueGetTypedArrayType*(ctx: JSContextRef, value: JSValueRef, exception: ptr JSValueRef): JSTypedArrayType
 proc JSValueIsEqual*(ctx: JSContextRef, a, b: JSValueRef, exception: ptr JSValueRef): bool
 proc JSValueIsStrictEqual*(ctx: JSContextRef, a, b: JSValueRef): bool
 proc JSValueMakeUndefined*(ctx: JSContextRef): JSValueRef
@@ -184,18 +190,21 @@ proc JSPropertyNameArrayGetCount*(arr: JSPropertyNameArrayRef): csize_t
 proc JSPropertyNameArrayGetNameAtIndex*(arr: JSPropertyNameArrayRef, index: csize_t): JSStringRef
 proc JSPropertyNameAccumulatorAddName*(acc: JSPropertyNameAccumulatorRef, name: JSStringRef)
 
-# JSTypedArray.h
-proc JSObjectMakeTypedArray*(ctx: JSContextRef, arrayType: JSTypedArrayType, length: csize_t, exception: ptr JSValueRef): JSObjectRef
-proc JSObjectMakeTypedArrayWithBytesNoCopy*(ctx: JSContextRef, arrayType: JSTypedArrayType, bytes: pointer, byteLength: csize_t, bytesDeallocator: JSTypedArrayBytesDeallocator, deallocatorContext: pointer, exception: ptr JSValueRef): JSObjectRef
-proc JSObjectMakeTypedArrayWithArrayBuffer*(ctx: JSContextRef, arrayType: JSTypedArrayType, buffer: JSObjectRef, exception: ptr JSValueRef): JSObjectRef
-proc JSObjectMakeTypedArrayWithArrayBufferAndOffset*(ctx: JSContextRef, arrayType: JSTypedArrayType, buffer: JSObjectRef, byteOffset: csize_t, length: csize_t, exception: ptr JSValueRef): JSObjectRef
-proc JSObjectGetTypedArrayBytesPtr*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): pointer
-proc JSObjectGetTypedArrayLength*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): csize_t
-proc JSObjectGetTypedArrayByteLength*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): csize_t
-proc JSObjectGetTypedArrayByteOffset*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): csize_t
-proc JSObjectGetTypedArrayBuffer*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): JSObjectRef
-proc JSObjectMakeArrayBufferWithBytesNoCopy*(ctx: JSContextRef, bytes: pointer, byteLength: csize_t, bytesDeallocator: JSTypedArrayBytesDeallocator, deallocatorContext: pointer, exception: ptr JSValueRef): JSObjectRef
-proc JSObjectGetArrayBufferBytesPtr*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): pointer
-proc JSObjectGetArrayBufferByteLength*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): csize_t
-
 {.pop.}
+
+# JSTypedArray.h (not in the push above: typedArrayApi sets importc)
+proc JSValueGetTypedArrayType*(ctx: JSContextRef, value: JSValueRef, exception: ptr JSValueRef): JSTypedArrayType {.typedArrayApi.}
+proc JSObjectMakeTypedArray*(ctx: JSContextRef, arrayType: JSTypedArrayType, length: csize_t, exception: ptr JSValueRef): JSObjectRef {.typedArrayApi.}
+proc JSObjectMakeTypedArrayWithBytesNoCopy*(ctx: JSContextRef, arrayType: JSTypedArrayType, bytes: pointer, byteLength: csize_t, bytesDeallocator: JSTypedArrayBytesDeallocator, deallocatorContext: pointer, exception: ptr JSValueRef): JSObjectRef {.typedArrayApi.}
+proc JSObjectMakeTypedArrayWithArrayBuffer*(ctx: JSContextRef, arrayType: JSTypedArrayType, buffer: JSObjectRef, exception: ptr JSValueRef): JSObjectRef {.typedArrayApi.}
+proc JSObjectMakeTypedArrayWithArrayBufferAndOffset*(ctx: JSContextRef, arrayType: JSTypedArrayType, buffer: JSObjectRef, byteOffset: csize_t, length: csize_t, exception: ptr JSValueRef): JSObjectRef {.typedArrayApi.}
+proc JSObjectGetTypedArrayBytesPtr*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): pointer {.typedArrayApi.}
+proc JSObjectGetTypedArrayLength*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): csize_t {.typedArrayApi.}
+proc JSObjectGetTypedArrayByteLength*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): csize_t {.typedArrayApi.}
+proc JSObjectGetTypedArrayByteOffset*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): csize_t {.typedArrayApi.}
+proc JSObjectGetTypedArrayBuffer*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): JSObjectRef {.typedArrayApi.}
+proc JSObjectMakeArrayBufferWithBytesNoCopy*(ctx: JSContextRef, bytes: pointer, byteLength: csize_t, bytesDeallocator: JSTypedArrayBytesDeallocator, deallocatorContext: pointer, exception: ptr JSValueRef): JSObjectRef {.typedArrayApi.}
+proc JSObjectGetArrayBufferBytesPtr*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): pointer {.typedArrayApi.}
+proc JSObjectGetArrayBufferByteLength*(ctx: JSContextRef, obj: JSObjectRef, exception: ptr JSValueRef): csize_t {.typedArrayApi.}
+
+
