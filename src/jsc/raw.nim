@@ -95,7 +95,7 @@ const
   kJSClassAttributeNoAutomaticPrototype* = (1 shl 1).JSClassAttributes
 
 # the typed array functions. With the prebuilt (Bun) library these bind to
-# wrappers that take the API lock, which the Bun fork omits (see bunlock.cpp).
+# wrappers that take the API lock, which the Bun fork omits (see bunlock.c).
 when jscBackend == "bun-prebuilt":
   {.pragma: typedArrayApi, cdecl, importc: "jscnim_$1".}
 else:

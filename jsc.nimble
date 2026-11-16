@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.1.1"
+version       = "0.1.2"
 author        = "Brent Pedersen"
 description   = "Nim bindings for JavaScriptCore, with a statically-linkable prebuilt engine on linux"
 license       = "MIT"

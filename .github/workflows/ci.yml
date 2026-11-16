@@ -6,7 +6,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
-        nim-version: ["2.2.10", "1.6.6"]
+        # 1.6.20 supports OpenSSL 3 when Nimble is built from source on ARM.
+        nim-version: ["2.2.10", "1.6.20"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
