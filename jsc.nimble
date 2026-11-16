@@ -1,11 +1,11 @@
 # Package
 
-version       = "0.1.0"
+version       = "0.1.1"
 author        = "Brent Pedersen"
 description   = "Nim bindings for JavaScriptCore, with a statically-linkable prebuilt engine on linux"
 license       = "MIT"
 srcDir        = "src"
-installExt    = @["nim", "sh", "c"]
+installExt    = @["nim", "sh", "c", "cpp"]
 
 # Dependencies
 
