@@ -1,0 +1,6 @@
+nimcache/
+tests/test_jsc
+benchmarks/bench_api
+benchmarks/bench_design
+*.out
+static_test
